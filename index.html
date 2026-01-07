@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>震感可视化：中国大陆M4.0+地震强震动监测全景</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 标题与导语区 */
+        .header {
+            background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+            padding: 4rem 0 3rem;
+            border-bottom: 1px solid #30363d;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #ff6b6b, #ffa36c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.3rem;
+            color: #8b949e;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+        
+        /* 项目简介 */
+        .intro-section {
+            padding: 4rem 0;
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #f0f6fc;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #238636, #2ea043);
+            border-radius: 2px;
+        }
+        
+        .intro-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+        
+        .intro-text p {
+            margin-bottom: 1.5rem;
+            color: #c9d1d9;
+            font-size: 1.1rem;
+        }
+        
+        .intro-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .stat-box {
+            background: #21262d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border-left: 4px solid #238636;
+        }
+        
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #f0f6fc;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #8b949e;
+            font-size: 0.95rem;
+        }
+        .intro-map-btn-container {
+            margin-top: 2.5rem;
+            text-align: left;
+        }
+        
+        .intro-map-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: linear-gradient(90deg, #238636, #2ea043);
+            color: white;
+            padding: 0.9rem 1.8rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+            border: 2px solid transparent;
+        }
+        
+        .intro-map-btn:hover {
+            background: linear-gradient(90deg, #2ea043, #3fb950);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(35, 134, 54, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .intro-map-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .intro-map-btn i {
+            font-size: 1.2rem;
+        }
+		
+		/* 项目成员样式 */
+		.team-members {
+			margin-bottom: 1.5rem;
+		}
+
+		.team-members h3 {
+			font-size: 1.2rem;
+			margin-bottom: 1.5rem;
+			color: #f0f6fc;
+		}
+
+		.members-list {
+			display: flex;
+			flex-direction: column;
+			gap: 1.2rem;
+		}
+
+		.member-item {
+			background-color: #21262d;
+			border-radius: 6px;
+			padding: 1rem;
+			border-left: 3px solid #238636;
+			transition: transform 0.2s ease, background-color 0.2s ease;
+		}
+
+		.member-item:hover {
+			background-color: #1c2128;
+			transform: translateX(5px);
+		}
+
+		.member-name {
+			font-weight: 600;
+			color: #f0f6fc;
+			font-size: 1rem;
+			margin-bottom: 0.3rem;
+		}
+
+		.member-role {
+			color: #8b949e;
+			font-size: 0.9rem;
+		}
+
+		/* 调整footer-content的布局以适应新增的项目成员部分 */
+		.footer-content {
+			display: grid;
+			grid-template-columns: 2fr 1fr 1fr;
+			gap: 3rem;
+			margin-bottom: 3rem;
+		}
+
+		@media (max-width: 992px) {
+			.footer-content {
+				grid-template-columns: 1fr;
+				gap: 2rem;
+			}
+		}
+        /* 核心交互地图 */
+        .map-section {
+            padding: 4rem 0;
+            background-color: #0d1117;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .map-container {
+            background-color: #161b22;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid #30363d;
+            height: 600px;
+        }
+        
+        #earthquake-map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .data-panel {
+            background-color: #161b22;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .panel-header h3 {
+            font-size: 1.5rem;
+            color: #f0f6fc;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-btn {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .control-btn:hover {
+            background-color: #30363d;
+            color: #f0f6fc;
+        }
+        
+        .control-btn.active {
+            background-color: #238636;
+            color: white;
+            border-color: #238636;
+        }
+        
+        .table-container {
+            overflow-y: auto;
+            flex-grow: 1;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            position: sticky;
+            top: 0;
+            background-color: #21262d;
+            z-index: 10;
+        }
+        
+        th {
+            padding: 1rem;
+            text-align: left;
+            color: #8b949e;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #30363d;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 1rem;
+            color: #c9d1d9;
+            border-bottom: 1px solid #30363d;
+            font-size: 0.9rem;
+        }
+        
+        tr:hover {
+            background-color: #1c2128;
+        }
+        
+        tr.selected {
+            background-color: rgba(35, 134, 54, 0.2);
+        }
+        
+        .magnitude {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-align: center;
+            min-width: 40px;
+        }
+        
+        .mag-4 { background-color: #ffd700; color: #000; }
+        .mag-5 { background-color: #ffa500; color: #000; }
+        .mag-6 { background-color: #ff6b00; color: #fff; }
+        .mag-7 { background-color: #ff0000; color: #fff; }
+        .mag-8 { background-color: #8b0000; color: #fff; }
+        
+        /* 台站详细数据区 */
+        .station-section {
+            padding: 4rem 0;
+            background-color: #161b22;
+            border-top: 1px solid #30363d;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .station-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .station-map-link {
+            background-color: #238636;
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        
+        .station-map-link:hover {
+            background-color: #2ea043;
+        }
+        
+        .station-table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid #30363d;
+        }
+        
+        .station-table {
+            min-width: 1200px;
+            background-color: #0d1117;
+        }
+        
+        .station-table th {
+            background-color: #161b22;
+            padding: 1.2rem;
+            font-size: 0.85rem;
+            text-align: center;
+            border-right: 1px solid #30363d;
+        }
+        
+        .station-table td {
+            padding: 1rem;
+            text-align: center;
+            border-right: 1px solid #30363d;
+            font-size: 0.85rem;
+        }
+        
+        .station-table tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .station-table tr:hover {
+            background-color: rgba(35, 134, 54, 0.1);
+        }
+        
+        /* 数据说明与页脚 */
+        .footer {
+            background-color: #161b22;
+            padding: 4rem 0 2rem;
+            border-top: 1px solid #30363d;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        @media (max-width: 992px) {
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+        
+        .data-source, .glossary, .copyright {
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            color: #f0f6fc;
+        }
+        
+        .data-source p {
+            margin-bottom: 1rem;
+            color: #8b949e;
+        }
+        
+        .data-source a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        
+        .data-source a:hover {
+            text-decoration: underline;
+        }
+        
+        .glossary-item {
+            margin-bottom: 1.2rem;
+        }
+        
+        .glossary-term {
+            color: #f0f6fc;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        
+        .glossary-def {
+            color: #8b949e;
+            font-size: 0.9rem;
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid #30363d;
+            color: #8b949e;
+            font-size: 0.9rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header .subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .intro-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .intro-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            th, td {
+                padding: 0.8rem 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .station-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+        
+        /* 地图图例 */
+        .legend {
+            background: rgba(22, 27, 34, 0.9);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            font-size: 0.9rem;
+        }
+        
+        .legend-title {
+            margin-bottom: 0.8rem;
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #8b949e;
+            font-size: 1.2rem;
+        }
+        
+        .map-title {
+            position: absolute;
+            top: 10px;
+            left: 50px;
+            z-index: 1000;
+            background: rgba(22, 27, 34, 0.9);
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+            color: #f0f6fc;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: #238636;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        
+        .link-btn:hover {
+            background-color: #2ea043;
+        }
+        
+        .highlight {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(35, 134, 54, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(35, 134, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(35, 134, 54, 0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 标题与导语区 -->
+    <header class="header">
+        <div class="container">
+            <h1>震感可视化：中国大陆M4.0+地震强震动监测全景</h1>
+            <p class="subtitle">基于中国地震台网中心强震动数据，动态展示震级、峰值加速度、仪器烈度等多维度信息的地理分布与详情。</p>
+            <div class="scroll-indicator">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 项目简介 -->
+    <section class="intro-section">
+        <div class="container">
+            <h2 class="section-title">项目简介</h2>
+            <div class="intro-content">
+                <div class="intro-text">
+                    <p>本平台致力于可视化中国大陆地区M4.0级及以上地震的强震动数据，提供专业、直观的地震影响分析工具。通过整合多维度地震参数，为地震工程、应急管理和科学研究提供数据支持。</p>
+                    <p>平台采用国家地震科学数据中心的权威数据，结合地理信息系统(GIS)技术，实现了地震事件的空间分布可视化、强震动参数的多维度展示及交互分析功能。</p>
+                    <p>通过本平台，用户可以直观了解不同震级地震的空间分布特征、强震动参数的衰减规律以及仪器烈度与震害潜势的关系，为地震风险评估和防灾减灾提供科学依据。</p>
+                
+				<div class="intro-map-btn-container">
+                        <a href="https://zhz0302.github.io/kepler/station.html" class="intro-map-btn" target="_blank">
+                            <i class="fas fa-map-marked-alt"></i> 查看地图
+                        </a>
+                    </div>
+				
+				</div>
+                <div class="intro-stats">
+                    <div class="stat-box">
+                        <div class="stat-number">M4.0+</div>
+                        <div class="stat-label">地震监测阈值</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">多维度</div>
+                        <div class="stat-label">参数可视化</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">台站级</div>
+                        <div class="stat-label">数据展示</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">全国</div>
+                        <div class="stat-label">覆盖范围</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 核心交互地图 -->
+    <section class="map-section">
+        <div class="container">
+            <h2 class="section-title">地震强震动部分数据可视化</h2>
+            <div class="dashboard">
+                <div class="map-container">
+                    <div class="map-title">中国大陆M4.0+地震分布</div>
+                    <div id="earthquake-map"></div>
+                </div>
+                <div class="data-panel">
+                    <div class="panel-header">
+                        <h3>地震强震动部分数据</h3>
+                        <div class="record-count">共 <span id="record-count">10</span> 条记录</div>
+                    </div>
+                    <div class="controls">
+                        <button class="control-btn active" data-filter="all">全部地震</button>
+                        <button class="control-btn" data-filter="mag-4">M4.0-4.9</button>
+                        <button class="control-btn" data-filter="mag-5">M5.0-5.9</button>
+                        <button class="control-btn" data-filter="mag-6">M6.0+</button>
+                        <button class="control-btn" data-filter="recent">最近30天</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="earthquake-table">
+                            <thead>
+                                <tr>
+                                    <th>发震时间</th>
+                                    <th>地点</th>
+                                    <th>震级</th>
+                                    <th>震源深度(km)</th>
+                                    <th>PGA(gal)</th>
+                                    <th>PGV(cm/s)</th>
+                                    <th>台站数量</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- 表格数据将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 台站详细数据区 -->
+    <section class="station-section">
+        <div class="container">
+            <div class="station-header">
+                <h2 class="section-title">台站强震动数据详情：新疆克孜勒苏州阿合奇县M6.0地震</h2>
+                
+            </div>
+            <div class="station-table-container">
+                <table class="station-table">
+                    <thead>
+                        <tr>
+                            <th>发震时间<br>(北京时间)</th>
+                            <th>震中纬度</th>
+                            <th>震中经度</th>
+                            <th>震源深度(km)</th>
+                            <th>震级</th>
+                            <th>发震<br>地点</th>
+                            <th>台网<br>代码</th>
+                            <th>台站<br>编码</th>
+                            <th>震中距(km)</th>
+                            <th>仪器烈度</th>
+                            <th>场地标签</th>
+                            <th>总峰值<br>加速度<br>PGA(gal)</th>
+                            <th>总峰值<br>速度<br>PGV(cm/s)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="station-table-body">
+                        <!-- 台站数据将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 数据说明与页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="data-source">
+                    <h3>数据来源</h3>
+                    <p>本平台数据来源于国家地震科学数据中心，确保数据的权威性和准确性。</p>
+                    <p>数据链接：<a href="https://data.earthquake.cn/datashare/report.shtml?PAGEID=ground_motion_list" target="_blank">https://data.earthquake.cn/datashare/report.shtml?PAGEID=ground_motion_list</a></p>
+                    <p>数据更新频率：数据最后更新时间为2025年12年4月。</p>
+                </div>
+				<div class="glossary">
+                    <h3>术语解释</h3>
+                    <div class="glossary-item">
+                        <div class="glossary-term">PGA（峰值加速度）</div>
+                        <div class="glossary-def">地震动加速度的最大绝对值，反映地震动的强度，单位通常为gal（伽）或cm/s²。</div>
+                    </div>
+                    <div class="glossary-item">
+                        <div class="glossary-term">PGV（峰值速度）</div>
+                        <div class="glossary-def">地震动速度的最大绝对值，反映地震动对结构的破坏潜力，单位通常为cm/s。</div>
+                    </div>
+                    <div class="glossary-item">
+                        <div class="glossary-term">仪器烈度</div>
+                        <div class="glossary-def">基于强震动记录计算的地震烈度，反映地震动对地表和建筑物的影响程度。</div>
+                    </div>
+                    <div class="glossary-item">
+                        <div class="glossary-term">震中距</div>
+                        <div class="glossary-def">地震台站到震中之间的水平距离，单位为公里(km)。</div>
+                    </div>
+				</div>
+            </div>
+			<div class="copyright">
+                    <h3>版权声明</h3>
+                    <p>本网站仅用于学术作业展示，数据来源于国家地震科学数据中心。</p>
+                    <p>数据最后更新时间：2024年12月4日</p>
+                    <p>© 2024 地震可视化研究小组</p>
+					<p> 项目成员：周仁康、程文妍、韦欣怡</p>
+					<p>本网站为静态HTML/CSS/JS项目，可通过GitHub Pages部署。设计基于学术仪表盘风格，采用响应式布局。</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 地震数据 - 部分中国大陆地区M4.0+地震数据
+        // 地震数据 - 部分中国大陆地区M4.0+地震数据
+		const earthquakeData = [
+			{
+				id: 1,
+				time: "2025-12-04 15:44:06",
+				location: "新疆克孜勒苏州阿合奇县",
+				latitude: 41.13,
+				longitude: 78.40,
+				depth: 10.0,
+				magnitude: 6.0,
+				pga: 140.90,
+				pgv: 11.00,
+				intensity: 6.9,
+				stationCount: 10,
+			},
+			{
+				id: 2,
+				time: "2025-11-28 08:15:32",
+				location: "四川甘孜州康定市",
+				latitude: 30.05,
+				longitude: 101.97,
+				depth: 12.0,
+				magnitude: 5.3,
+				pga: 89.40,
+				pgv: 8.20,
+				intensity: 6.2,
+				stationCount: 8,
+			},
+			{
+				id: 3,
+				time: "2025-11-20 03:42:18",
+				location: "云南大理州漾濞县",
+				latitude: 25.67,
+				longitude: 99.98,
+				depth: 8.0,
+				magnitude: 4.7,
+				pga: 45.60,
+				pgv: 3.80,
+				intensity: 5.1,
+				stationCount: 6,
+			},
+			{
+				id: 4,
+				time: "2025-11-12 17:28:55",
+				location: "西藏阿里地区日土县",
+				latitude: 33.44,
+				longitude: 79.70,
+				depth: 15.0,
+				magnitude: 5.8,
+				pga: 120.30,
+				pgv: 9.60,
+				intensity: 6.5,
+				stationCount: 9,
+			},
+			{
+				id: 5,
+				time: "2025-11-05 11:10:42",
+				location: "青海海西州茫崖市",
+				latitude: 38.25,
+				longitude: 90.85,
+				depth: 20.0,
+				magnitude: 4.3,
+				pga: 32.10,
+				pgv: 2.40,
+				intensity: 4.8,
+				stationCount: 5,
+			},
+			{
+				id: 6,
+				time: "2025-10-29 22:36:27",
+				location: "甘肃张掖市肃南县",
+				latitude: 38.84,
+				longitude: 99.61,
+				depth: 11.0,
+				magnitude: 4.9,
+				pga: 58.90,
+				pgv: 4.70,
+				intensity: 5.4,
+				stationCount: 7,
+			},
+			{
+				id: 7,
+				time: "2025-10-27 15:39:21",
+				location: "新疆吐鲁番市托克逊县",
+				latitude: 41.77,
+				longitude: 88.52,
+				depth: 27,
+				magnitude: 4.7,
+				pga: 3.00,
+				pgv: 0.10,
+				intensity: 1.6,
+				stationCount: 20,
+			},
+			{
+				id: 8,
+				time: "2025-10-26 23:02:56",
+				location: "四川甘孜州乡城县",
+				latitude: 29.08,
+				longitude: 99.65,
+				depth: 15.0,
+				magnitude: 4.7,
+				pga: 2.3,
+				pgv: 0.10,
+				intensity: 2.2,
+				stationCount: 10,
+			},
+			{
+				id: 9,
+				time: "2025-10-25 19:45:22",
+				location: "吉林延边州珲春市",
+				latitude: 43.08,
+				longitude: 131.10,
+				depth: 560.0,
+				magnitude: 5.5,
+				pga: 0.2,
+				pgv: 0.0,
+				intensity: -1.6,
+				stationCount: 19,
+			},
+			{
+				id: 10,
+				time: "2025-10-21 06:54:13",
+				location: "台湾花莲县",
+				latitude: 23.95,
+				longitude: 121.60,
+				depth: 9.0,
+				magnitude: 6.2,
+				pga: 165.80,
+				pgv: 13.20,
+				intensity: 7.1,
+				stationCount: 12,
+			},
+			{
+				id: 11,
+				time: "2025-10-14 14:22:08",
+				location: "新疆巴音郭楞州和静县",
+				latitude: 42.31,
+				longitude: 86.33,
+				depth: 18.0,
+				magnitude: 4.5,
+				pga: 41.20,
+				pgv: 3.10,
+				intensity: 5.0,
+				stationCount: 6,
+			},
+			{
+				id: 12,
+				time: "2025-10-12 15:21:43",
+				location: "四川雅安市芦山县",
+				latitude: 30.48,
+				longitude: 103.09,
+				depth: 10.0,
+				magnitude: 4.7,
+				pga: 65.40,
+				pgv: 3.10,
+				intensity: 5.2,
+				stationCount: 112,
+			},
+			{
+				id: 13,
+				time: "2025-10-07 09:05:51",
+				location: "四川凉山州木里县",
+				latitude: 27.93,
+				longitude: 101.27,
+				depth: 14.0,
+				magnitude: 5.1,
+				pga: 76.50,
+				pgv: 6.90,
+				intensity: 5.9,
+				stationCount: 7,
+			},
+			{
+				id: 14,
+				time: "2025-08-27 04:16:09",
+				location: "西藏那曲市双湖县",
+				latitude: 33.98,
+				longitude: 88.38,
+				depth: 10.0,
+				magnitude: 4.5,
+				pga: 12.40,
+				pgv: 0.40,
+				intensity: 3.0,
+				stationCount: 1,
+			},
+			{
+				id: 15,
+				time: "2025-08-06 02:33:59",
+				location: "山东德州市平原县",
+				latitude: 37.16,
+				longitude: 116.34,
+				depth: 10.0,
+				magnitude: 5.5,
+				pga: 2.6,
+				pgv: 0.20,
+				intensity: 1.6,
+				stationCount: 2002,
+			},
+			{
+				id: 16,
+				time: "2025-07-25 10:13:01",
+				location: "山西临汾市襄汾县",
+				latitude: 35.85,
+				longitude: 111.27,
+				depth: 19.0,
+				magnitude: 4.2,
+				pga: 7.70,
+				pgv: 0.30,
+				intensity: 2.8,
+				stationCount: 89,
+			},
+			{
+				id: 17,
+				time: "2025-06-23 18:48:50",
+				location: "广东清远市清城区",
+				latitude: 23.62,
+				longitude: 113.17,
+				depth: 10.0,
+				magnitude: 4.3,
+				pga: 7.5,
+				pgv: 0.30,
+				intensity: 2.7,
+				stationCount: 224,
+			}
+		];
+
+        // 新疆克孜勒苏州阿合奇县台站详细数据
+        const stationData = [
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "AHQ",
+                distance: 22,
+                intensity: 5.4,
+                siteLabel: "基岩",
+                pga: 29.60,
+                pgv: 3.30
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "P000A",
+                distance: 24,
+                intensity: 5.5,
+                siteLabel: "地表",
+                pga: 39.60,
+                pgv: 4.40
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "PH002",
+                distance: 30,
+                intensity: 5.3,
+                siteLabel: "地表",
+                pga: 58.50,
+                pgv: 2.60
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "P0002",
+                distance: 32,
+                intensity: 6.9,
+                siteLabel: "地表",
+                pga: 140.90,
+                pgv: 11.00
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "N005B",
+                distance: 44,
+                intensity: 4.0,
+                siteLabel: "地表",
+                pga: 18.70,
+                pgv: 1.00
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "PH001",
+                distance: 47,
+                intensity: 5.4,
+                siteLabel: "地表",
+                pga: 60.90,
+                pgv: 2.60
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "P0001",
+                distance: 51,
+                intensity: 4.6,
+                siteLabel: "地表",
+                pga: 29.70,
+                pgv: 1.30
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "P000B",
+                distance: 52,
+                intensity: 3.1,
+                siteLabel: "地表",
+                pga: 6.70,
+                pgv: 0.50
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "N0061",
+                distance: 53,
+                intensity: 2.9,
+                siteLabel: "地表",
+                pga: 10.70,
+                pgv: 0.40
+            },
+            {
+                earthquakeId: 1,
+                time: "2025-12-04<br>15:44:06.0",
+                latitude: 41.13,
+                longitude: 78.40,
+                depth: 10.0,
+                magnitude: 6.0,
+                location: "新疆克孜勒苏州阿合奇县",
+                networkCode: "XJ",
+                stationCode: "NU002",
+                distance: 62,
+                intensity: 3.6,
+                siteLabel: "地表",
+                pga: 11.30,
+                pgv: 0.80
+            }
+        ];
+
+        // 初始化地图
+        let map = L.map('earthquake-map').setView([35.0, 105.0], 4);
+        
+        // 添加地图图层
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 10,
+            minZoom: 3
+        }).addTo(map);
+        
+        // 地震图层组
+        let earthquakeLayer = L.layerGroup().addTo(map);
+        
+        // 选中的地震标记
+        let selectedMarker = null;
+        
+        // 根据震级获取颜色
+        function getMagnitudeColor(magnitude) {
+            if (magnitude >= 8.0) return '#8b0000';
+            if (magnitude >= 7.0) return '#ff0000';
+            if (magnitude >= 6.0) return '#ff6b00';
+            if (magnitude >= 5.0) return '#ffa500';
+            return '#ffd700';
+        }
+        
+        // 根据震级获取震级分类
+        function getMagnitudeClass(magnitude) {
+            if (magnitude >= 8.0) return 'mag-8';
+            if (magnitude >= 7.0) return 'mag-7';
+            if (magnitude >= 6.0) return 'mag-6';
+            if (magnitude >= 5.0) return 'mag-5';
+            return 'mag-4';
+        }
+        
+        // 绘制地震标记
+        function plotEarthquakes(data) {
+            earthquakeLayer.clearLayers();
+            
+            data.forEach(quake => {
+                // 根据震级计算标记大小
+                const markerSize = Math.max(quake.magnitude * 5, 15);
+                
+                // 创建自定义标记
+                const marker = L.circleMarker([quake.latitude, quake.longitude], {
+                    radius: markerSize,
+                    fillColor: getMagnitudeColor(quake.magnitude),
+                    color: '#fff',
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.7
+                });
+                
+                // 绑定弹出窗口
+                const popupContent = `
+                    <div style="font-family: 'Segoe UI', sans-serif; color: #0d1117; min-width: 300px;">
+                        <h3 style="margin-bottom: 10px; color: #238636;">${quake.location}</h3>
+                        <p><strong>发震时间：</strong>${quake.time}</p>
+                        <p><strong>震级：</strong><span class="magnitude ${getMagnitudeClass(quake.magnitude)}">M${quake.magnitude.toFixed(1)}</span></p>
+                        <p><strong>震源深度：</strong>${quake.depth} km</p>
+                        <p><strong>峰值加速度(PGA)：</strong>${quake.pga} gal</p>
+                        <p><strong>峰值速度(PGV)：</strong>${quake.pgv} cm/s</p>
+                        <p><strong>仪器烈度：</strong>${quake.intensity.toFixed(1)}</p>
+                        <p><strong>台站数量：</strong>${quake.stationCount}</p>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                
+                // 点击事件
+                marker.on('click', function() {
+                    highlightEarthquake(quake.id);
+                });
+                
+                marker.addTo(earthquakeLayer);
+                marker.quakeId = quake.id;
+            });
+            
+            // 更新记录数量
+            document.getElementById('record-count').textContent = data.length;
+        }
+        
+        // 初始化表格
+        function populateTable(data) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+            
+            data.forEach(quake => {
+                const row = document.createElement('tr');
+                row.dataset.id = quake.id;
+                
+                const mapLink = quake.hasStationMap ? 
+                    `<a href="${quake.stationMapUrl}" class="link-btn" target="_blank"><i class="fas fa-map"></i> 查看</a>` : 
+                    '<span style="color: #8b949e;">暂无</span>';
+                
+                row.innerHTML = `
+                    <td>${quake.time}</td>
+                    <td>${quake.location}</td>
+                    <td><span class="magnitude ${getMagnitudeClass(quake.magnitude)}">M${quake.magnitude.toFixed(1)}</span></td>
+                    <td>${quake.depth}</td>
+                    <td>${quake.pga}</td>
+                    <td>${quake.pgv}</td>
+                    <td>${quake.stationCount}</td>
+                `;
+                
+                // 点击事件
+                row.addEventListener('click', function() {
+                    highlightEarthquake(quake.id);
+                });
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 初始化台站详细数据表格
+        function populateStationTable() {
+            const tableBody = document.getElementById('station-table-body');
+            tableBody.innerHTML = '';
+            
+            stationData.forEach(station => {
+                const row = document.createElement('tr');
+                
+                // 为PGA值最高的台站添加高亮效果
+                const isHighlight = station.pga === 140.90;
+                
+                row.innerHTML = `
+                    <td>${station.time}</td>
+                    <td>${station.latitude}</td>
+                    <td>${station.longitude}</td>
+                    <td>${station.depth}</td>
+                    <td>${station.magnitude}</td>
+                    <td>${station.location}</td>
+                    <td>${station.networkCode}</td>
+                    <td>${station.stationCode}</td>
+                    <td>${station.distance}</td>
+                    <td>${station.intensity}</td>
+                    <td>${station.siteLabel}</td>
+                    <td ${isHighlight ? 'class="highlight"' : ''}>${station.pga}</td>
+                    <td>${station.pgv}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 高亮选中的地震
+        function highlightEarthquake(id) {
+            // 清除之前选中的行
+            document.querySelectorAll('#table-body tr').forEach(row => {
+                row.classList.remove('selected');
+            });
+            
+            // 高亮选中的行
+            const selectedRow = document.querySelector(`#table-body tr[data-id="${id}"]`);
+            if (selectedRow) {
+                selectedRow.classList.add('selected');
+                selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            // 清除之前选中的标记
+            if (selectedMarker) {
+                selectedMarker.setStyle({ color: '#fff', weight: 1 });
+            }
+            
+            // 高亮选中的标记
+            earthquakeLayer.eachLayer(layer => {
+                if (layer.quakeId === id) {
+                    layer.setStyle({ color: '#00ff00', weight: 3 });
+                    selectedMarker = layer;
+                    
+                    // 打开弹出窗口并居中地图
+                    layer.openPopup();
+                    map.setView([layer.getLatLng().lat, layer.getLatLng().lng], 6);
+                }
+            });
+            
+            // 如果是新疆地震，滚动到台站数据部分
+            if (id === 1) {
+                setTimeout(() => {
+                    document.querySelector('.station-section').scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            }
+        }
+        
+        // 筛选数据
+        function filterData(filterType) {
+            let filteredData = [...earthquakeData];
+            
+            switch(filterType) {
+                case 'mag-4':
+                    filteredData = earthquakeData.filter(q => q.magnitude >= 4.0 && q.magnitude < 5.0);
+                    break;
+                case 'mag-5':
+                    filteredData = earthquakeData.filter(q => q.magnitude >= 5.0 && q.magnitude < 6.0);
+                    break;
+                case 'mag-6':
+                    filteredData = earthquakeData.filter(q => q.magnitude >= 6.0);
+                    break;
+                case 'recent':
+                    // 模拟最近30天的数据（实际应用中需要根据时间过滤）
+                    filteredData = earthquakeData.slice(0, 5);
+                    break;
+                case 'all':
+                default:
+                    filteredData = earthquakeData;
+                    break;
+            }
+            
+            plotEarthquakes(filteredData);
+            populateTable(filteredData);
+        }
+        
+        // 初始化地图图例
+        function addLegend() {
+            const legend = L.control({position: 'bottomright'});
+            
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'legend');
+                div.innerHTML = `
+                    <div class="legend-title">震级图例</div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ffd700;"></div>
+                        <span>M4.0-4.9</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ffa500;"></div>
+                        <span>M5.0-5.9</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ff6b00;"></div>
+                        <span>M6.0-6.9</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ff0000;"></div>
+                        <span>M7.0-7.9</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #8b0000;"></div>
+                        <span>M8.0+</span>
+                    </div>
+                `;
+                return div;
+            };
+            
+            legend.addTo(map);
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始绘制所有地震
+            plotEarthquakes(earthquakeData);
+            populateTable(earthquakeData);
+            
+            // 初始化台站详细数据表格
+            populateStationTable();
+            
+            // 添加图例
+            addLegend();
+            
+            // 设置筛选按钮事件
+            document.querySelectorAll('.control-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    // 移除所有按钮的active类
+                    document.querySelectorAll('.control-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // 为当前按钮添加active类
+                    this.classList.add('active');
+                    
+                    // 筛选数据
+                    filterData(this.dataset.filter);
+                });
+            });
+            
+            // 默认选中新疆地震
+            setTimeout(() => {
+                highlightEarthquake(1);
+            }, 500);
+            
+            // 模拟加载效果
+            setTimeout(() => {
+                document.querySelector('.loading')?.remove();
+            }, 1000);
+        });
+        
+        // 响应式调整地图大小
+        window.addEventListener('resize', function() {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 200);
+        });
+    </script>
+</body>
+</html>
